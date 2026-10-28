@@ -1,0 +1,98 @@
+# INACTIVE TEMPLATE: deliberately outside .github/workflows, and every job is disabled.
+# Requires a published wrapper implementation gitlink and reviewed App/runner access.
+name: CLI CI
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  general-conformance:
+    if: ${{ false }}
+    name: CLI general conformance
+    runs-on: [self-hosted, Windows, X64, matlab-r2026b]
+    steps:
+      - uses: actions/create-github-app-token@v2
+        id: integration-token
+        with:
+          app-id: ${{ vars.WSS_GITHUB_APP_ID }}
+          private-key: ${{ secrets.WSS_GITHUB_APP_PRIVATE_KEY }}
+          owner: cwru-non-academic
+          repositories: Matlab_WSS_Integration_Lib
+          permission-contents: read
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Resolve committed wrapper revision
+        id: integration
+        shell: pwsh
+        run: |
+          $sha = (& git rev-parse 'HEAD:external/wss-matlab-wrapper').Trim()
+          if ($LASTEXITCODE -ne 0 -or $sha -notmatch '^[0-9a-f]{40}$') { throw 'Invalid wrapper gitlink.' }
+          "sha=$sha" >> $env:GITHUB_OUTPUT
+      - uses: actions/checkout@v4
+        with:
+          repository: cwru-non-academic/Matlab_WSS_Integration_Lib
+          ref: ${{ steps.integration.outputs.sha }}
+          path: external/wss-matlab-wrapper
+          token: ${{ steps.integration-token.outputs.token }}
+          persist-credentials: false
+      - name: Verify production MATLAB CLI and factory
+        shell: pwsh
+        run: |
+          dotnet build external/wss-matlab-wrapper/managed/Wss.Matlab.Managed.csproj -c Release
+          if ($LASTEXITCODE -ne 0) { throw 'Wrapper host build failed.' }
+          matlab -batch "dotnetenv('core',Version='8'); addpath('src','conformance'); assertSuccess(runtests('tests')); runCliConformance();"
+          if ($LASTEXITCODE -ne 0) { throw 'CLI conformance checks failed.' }
+      - name: Verify blocking console-double interruption and repeated cleanup
+        shell: pwsh
+        run: |
+          if (-not $env:PYTHON_EXECUTABLE -or -not $env:MATLAB_ROOT) { throw 'Provision supported Python and MATLAB paths before activation.' }
+          & $env:PYTHON_EXECUTABLE tests/engine/check_interactive_lifecycle.py --matlab-root $env:MATLAB_ROOT --wrapper-root "$env:GITHUB_WORKSPACE/external/wss-matlab-wrapper"
+          if ($LASTEXITCODE -ne 0) { throw 'MATLAB Engine lifecycle checks failed.' }
+  platform-compatibility:
+    if: ${{ false }}
+    name: CLI platform compatibility (${{ matrix.label }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Windows
+            runner: Windows
+          - label: Ubuntu
+            runner: Linux
+          - label: macOS
+            runner: macOS
+    runs-on: [self-hosted, '${{ matrix.runner }}', matlab-r2026b]
+    steps:
+      - uses: actions/create-github-app-token@v2
+        id: integration-token
+        with:
+          app-id: ${{ vars.WSS_GITHUB_APP_ID }}
+          private-key: ${{ secrets.WSS_GITHUB_APP_PRIVATE_KEY }}
+          owner: cwru-non-academic
+          repositories: Matlab_WSS_Integration_Lib
+          permission-contents: read
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Resolve committed wrapper revision
+        id: integration
+        shell: pwsh
+        run: |
+          $sha = (& git rev-parse 'HEAD:external/wss-matlab-wrapper').Trim()
+          if ($LASTEXITCODE -ne 0 -or $sha -notmatch '^[0-9a-f]{40}$') { throw 'Invalid wrapper gitlink.' }
+          "sha=$sha" >> $env:GITHUB_OUTPUT
+      - uses: actions/checkout@v4
+        with:
+          repository: cwru-non-academic/Matlab_WSS_Integration_Lib
+          ref: ${{ steps.integration.outputs.sha }}
+          path: external/wss-matlab-wrapper
+          token: ${{ steps.integration-token.outputs.token }}
+          persist-credentials: false
+      - name: Verify production CLI loading against the pinned wrapper
+        shell: pwsh
+        run: |
+          dotnet build external/wss-matlab-wrapper/managed/Wss.Matlab.Managed.csproj -c Release
+          if ($LASTEXITCODE -ne 0) { throw 'Wrapper host build failed.' }
+          matlab -batch "dotnetenv('core',Version='8'); addpath('src','conformance'); checkCliCompatibility();"
+          if ($LASTEXITCODE -ne 0) { throw 'CLI compatibility checks failed.' }

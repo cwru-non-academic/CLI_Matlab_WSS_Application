@@ -1,0 +1,11 @@
+{
+  "schema": "wss-matlab-propagation/v1",
+  "enabled": false,
+  "role": "cli-consumer",
+  "upstream": "cwru-non-academic/Matlab_WSS_Integration_Lib",
+  "submodule_path": "external/wss-matlab-wrapper",
+  "required_evidence": ["matlab-cli-options", "matlab-production-factory-conformance", "matlab-command-routing", "matlab-quit-error-ctrl-c-cleanup"],
+  "delivery": "gitlink-only-dev-pull-request",
+  "human_merge_required": true,
+  "auto_merge": false
+}

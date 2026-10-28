@@ -1,0 +1,18 @@
+# MATLAB local and generated files
+*.asv
+*.m~
+*.mexw64
+slprj/
+codegen/
+matlab.prf
+# Build/test/runtime evidence
+bin/
+obj/
+TestResults/
+artifacts/
+logs/
+*.log
+__pycache__/
+*.py[cod]
+.DS_Store
+Thumbs.db
