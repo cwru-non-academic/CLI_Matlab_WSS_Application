@@ -19,7 +19,7 @@ Reference: Python CLI revision `3a0c18cb388c1bdca155ea7ba0a10e0cb45c583f`.
 ## Published wrapper baseline
 
 The submodule pins published wrapper revision
-`9aa89b07364c1c79758a1403abc56d69981e9d56`, including the reusable implementation,
+`fdc7584e77d62b4d3a56ff608e7a1ced1afd2dcf`, including the reusable implementation,
 Core payload, managed host and exact MIT license. The default CLI uses this
 committed submodule; no sibling checkout or local override is required.
 
@@ -102,4 +102,5 @@ It uses the MATLAB-bundled Engine API directly and installs nothing. Its tempora
 input shadow is confined to the isolated test process.
 
 Future propagation is described in the wrapper's `docs/PROPAGATION.md` and this
-repo's `automation/pipeline-contract.json`. No workflow or dispatch is active.
+repo's `automation/pipeline-contract.json`. Ordinary PR CI is documented in
+`ci/README.md`; automated Core propagation and dispatch remain inactive.

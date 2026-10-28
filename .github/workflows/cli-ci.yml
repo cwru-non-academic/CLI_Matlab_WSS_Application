@@ -1,0 +1,84 @@
+name: CLI CI
+on:
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  general-conformance:
+    name: CLI general conformance
+    runs-on: ${{ vars.WSS_MATLAB_WINDOWS_RUNNER && fromJSON(vars.WSS_MATLAB_WINDOWS_RUNNER) || 'windows-latest' }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: recursive
+      - name: Require a licensed MATLAB/.NET runner
+        shell: pwsh
+        run: ./ci/Assert-MatlabCiPrerequisites.ps1 -Platform Windows
+      - name: Build the pinned wrapper host
+        shell: pwsh
+        run: |
+          dotnet build external/wss-matlab-wrapper/managed/Wss.Matlab.Managed.csproj -c Release
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned wrapper host build failed.' }
+      - name: Run production CLI behavior and canonical Core scenarios
+        shell: pwsh
+        run: |
+          matlab -batch "addpath('ci'); runCliCi('general');"
+          if ($LASTEXITCODE -ne 0) { throw 'MATLAB CLI conformance failed.' }
+      - name: Verify real MATLAB interruption at the blocking input double
+        shell: pwsh
+        run: |
+          $python = if ($env:PYTHON_EXECUTABLE) { $env:PYTHON_EXECUTABLE } else { 'python' }
+          $matlabRoot = (Get-Content -LiteralPath artifacts/ci/matlab-root.txt -Raw).Trim()
+          & $python tests/engine/check_interactive_lifecycle.py --matlab-root $matlabRoot --wrapper-root "$env:GITHUB_WORKSPACE/external/wss-matlab-wrapper"
+          if ($LASTEXITCODE -ne 0) { throw 'MATLAB Engine lifecycle checks failed.' }
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() && runner.environment == 'self-hosted' }}
+        with:
+          name: ${{ github.job }}-${{ matrix.name || 'general' }}
+          path: artifacts/ci/
+          if-no-files-found: warn
+  platform-compatibility:
+    name: CLI platform compatibility (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            os: windows-latest
+            runner: ${{ vars.WSS_MATLAB_WINDOWS_RUNNER }}
+          - name: Ubuntu
+            os: ubuntu-latest
+            runner: ${{ vars.WSS_MATLAB_UBUNTU_RUNNER }}
+          - name: macOS
+            os: macos-latest
+            runner: ${{ vars.WSS_MATLAB_MACOS_RUNNER }}
+    runs-on: ${{ matrix.runner && fromJSON(matrix.runner) || matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: recursive
+      - name: Require a licensed MATLAB/.NET runner
+        shell: pwsh
+        run: ./ci/Assert-MatlabCiPrerequisites.ps1 -Platform '${{ matrix.name }}'
+      - name: Build the pinned wrapper host
+        shell: pwsh
+        run: |
+          dotnet build external/wss-matlab-wrapper/managed/Wss.Matlab.Managed.csproj -c Release
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned wrapper host build failed.' }
+      - name: Verify CLI paths and platform loading separately from behavior
+        shell: pwsh
+        run: |
+          matlab -batch "addpath('ci'); runCliCi('compatibility');"
+          if ($LASTEXITCODE -ne 0) { throw 'MATLAB CLI compatibility checks failed.' }
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() && runner.environment == 'self-hosted' }}
+        with:
+          name: ${{ github.job }}-${{ matrix.name || 'general' }}
+          path: artifacts/ci/
+          if-no-files-found: warn
