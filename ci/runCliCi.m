@@ -23,7 +23,7 @@ switch char(purpose)
         assertSuccess(tests);
         scenarios = runCliConformance();
         summary = struct('purpose', purpose, 'matlab', version, 'testsPassed', sum([tests.Passed]), ...
-            'scenariosPassed', sum([scenarios.Passed]));
+            'scenariosPassed', sum([scenarios.Passed]), 'cases', {scenarios});
     case 'compatibility'
         summary = checkCliCompatibility();
         summary.purpose = purpose;
