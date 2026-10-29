@@ -42,7 +42,7 @@ try
     if options.ConformanceMode && isempty(options.Commands)
         conformanceCleanup = onCleanup(@() path(oldPath));
         addpath(fullfile(root, 'conformance'));
-        results = runCliConformance(options.WrapperRoot);
+        results = runCliConformance(options.WrapperRoot, options.CsLibDir);
         if ~all([results.Passed]), error('wss_cli:Conformance', 'Core conformance failed.'); end
         fprintf('Conformance: %d/%d passed\n', sum([results.Passed]), numel(results));
         return;

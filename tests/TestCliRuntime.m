@@ -69,3 +69,12 @@ text = evalc("code = wss_cli.main({'--wrapper-root', wrapperRoot, '--transport=c
 verifyEqual(testCase, code, 0);
 verifySubstring(testCase, text, 'Conformance: 10/10 passed');
 end
+
+function testConformanceRejectsMissingSelectedPayload(testCase)
+wrapperRoot = getenv('WSS_MATLAB_WRAPPER_ROOT');
+if isempty(wrapperRoot)
+    wrapperRoot = fullfile(fileparts(fileparts(mfilename('fullpath'))), 'external', 'wss-matlab-wrapper');
+end
+verifyError(testCase, @() wss_cli.main({'--wrapper-root', wrapperRoot, ...
+    '--conformance', '--cs-libs', tempname}), 'wss:MissingCore');
+end
