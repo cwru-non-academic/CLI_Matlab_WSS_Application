@@ -19,7 +19,7 @@ Reference: Python CLI revision `3a0c18cb388c1bdca155ea7ba0a10e0cb45c583f`.
 ## Published wrapper baseline
 
 The submodule pins published wrapper revision
-`ca97b87e168ba69d84ea6654b8e778dcc6e88e4d`, including the reusable implementation,
+`671ef5c27d35f0f82b15999b1779ed57d968fa2d`, including the reusable implementation,
 Core payload, managed host and exact MIT license. The default CLI uses this
 committed submodule; no sibling checkout or local override is required.
 
