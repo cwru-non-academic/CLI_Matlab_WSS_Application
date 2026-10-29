@@ -64,10 +64,34 @@ log paths are anchored to the application, DLL paths to the selected wrapper.
 User path overrides are anchored when parsed. Default transport is serial, as in
 Python; use `--test` or `--conformance` for development without hardware.
 
-Options: `--serial`, `--config`, `--cs-libs`, `--log-file`, `--max-retries`, `--tick`,
+Options: `--transport serial|ble|test|conformance`, `--ble-auto`,
+`--ble-device-name NAME`, `--ble-device-id ID`, `--serial-smoke`, `--serial`, `--config`, `--cs-libs`, `--log-file`, `--max-retries`, `--tick`,
 `--test`, `--conformance`, `--command`, `--wrapper-root`, `--help`.
+Value options accept either `--name value` or C#-style `--name=value`.
+BLE selection requires automatic selection, an exact device name, or a device ID;
+Core owns discovery, ID precedence, connection and protocol behavior. For example:
+
+```matlab
+wss_cli.main({'--transport=ble', '--ble-auto'});
+wss_cli.main({'--transport=ble', '--ble-device-name=WSS'});
+wss_cli.main({'--transport=ble', '--ble-device-id=DEVICE_ID'});
+```
+
+These live commands may scan/connect hardware. `--serial-smoke` only constructs
+and disposes the serial transport. Do not combine conflicting transport aliases.
+The BLE feature requires the companion wrapper feature revision; until it is
+published and the gitlink updated, use `--wrapper-root` with that local checkout.
+This preparation does not change the production submodule pin or Core payload.
+Windows/Linux BLE require the matching packaged backend and OS Bluetooth access;
+macOS BLE requires the newer Core payload containing the MacOS backend/native
+bridge. The currently pinned legacy payload lacks those macOS files and reports
+an explicit missing-backend error. No physical BLE validation is claimed.
+
 Commands: `help`, `start`, `stop`, `status`, `stim`, `analog`, `reload-core`,
 `reload-params`, `save-params`, `quit`/`exit`. Quoted reload paths may contain spaces.
+`--conformance` (or `--transport=conformance`) without `--command` runs the
+shared deterministic catalog and exits, like the C# conformance entry. Supplying
+commands uses the emulator for those commands.
 Initialization is asynchronous: creation of the managed stack does not mean it
 has reached Ready. Batch command errors propagate to MATLAB's nonzero failure
 exit; interactive command errors are shown without abandoning cleanup.

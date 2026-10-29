@@ -23,4 +23,23 @@ function testHelpDoesNotRequireInitializedSubmodule(testCase)
 text = evalc("code = wss_cli.main({'--help'});");
 verifyEqual(testCase, code, 0);
 verifySubstring(testCase, text, 'WSS MATLAB CLI');
+verifySubstring(testCase, text, '--transport serial|ble|test|conformance');
+verifySubstring(testCase, text, '--ble-device-id');
+end
+
+function testCSharpSyntaxAndBleSelectors(testCase)
+options = wss_cli.parseOptions({'--transport=BLE', '--ble-auto', '--ble-device-name=WSS unit', ...
+    '--ble-device-id=device-id', '--serial=COM7', '--max-retries=7', '--tick=12'});
+verifyEqual(testCase, options.Transport, 'ble');
+verifyTrue(testCase, options.BleAutoSelect);
+verifyEqual(testCase, options.BleDeviceName, 'WSS unit');
+verifyEqual(testCase, options.BleDeviceId, 'device-id');
+verifyEqual(testCase, options.SerialPort, 'COM7');
+verifyEqual(testCase, options.MaxSetupTries, 7);
+verifyEqual(testCase, options.TickIntervalMs, 12);
+options = wss_cli.parseOptions({'--transport', 'conformance'});
+verifyTrue(testCase, options.ConformanceMode);
+verifyError(testCase, @() wss_cli.parseOptions({'--transport=ble', '--test'}), 'wss_cli:ConflictingTransport');
+verifyError(testCase, @() wss_cli.parseOptions({'--transport=wifi'}), 'wss_cli:UnsupportedTransport');
+verifyError(testCase, @() wss_cli.parseOptions({'--ble-auto=false'}), 'wss_cli:UnexpectedValue');
 end
