@@ -19,7 +19,7 @@ Reference: Python CLI revision `3a0c18cb388c1bdca155ea7ba0a10e0cb45c583f`.
 ## Published wrapper baseline
 
 The submodule pins published wrapper revision
-`fdc7584e77d62b4d3a56ff608e7a1ced1afd2dcf`, including the reusable implementation,
+`ca97b87e168ba69d84ea6654b8e778dcc6e88e4d`, including the reusable implementation,
 Core payload, managed host and exact MIT license. The default CLI uses this
 committed submodule; no sibling checkout or local override is required.
 
@@ -79,9 +79,8 @@ wss_cli.main({'--transport=ble', '--ble-device-id=DEVICE_ID'});
 
 These live commands may scan/connect hardware. `--serial-smoke` only constructs
 and disposes the serial transport. Do not combine conflicting transport aliases.
-The BLE feature requires the companion wrapper feature revision; until it is
-published and the gitlink updated, use `--wrapper-root` with that local checkout.
-This preparation does not change the production submodule pin or Core payload.
+The pinned wrapper includes BLE transport selection and platform loading.
+No local override is needed for this feature. The Core binary payload is unchanged.
 Windows/Linux BLE require the matching packaged backend and OS Bluetooth access;
 macOS BLE requires the newer Core payload containing the MacOS backend/native
 bridge. The currently pinned legacy payload lacks those macOS files and reports
