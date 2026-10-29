@@ -17,9 +17,29 @@ switch command
         requireCount(parts, 1, 1); controller.StopStimulation();
     case 'status'
         requireCount(parts, 1, 1);
-        fprintf('Ready=%d Started=%d ModeValid=%d BasicSupported=%d Ticks=%d\n', ...
-            controller.Ready(), controller.Started(), controller.isModeValid(), ...
-            controller.BasicSupported, controller.TickCount);
+        tickError = controller.LastTickError;
+        if isempty(tickError)
+            try
+                ready = controller.Ready();
+                started = controller.Started();
+                modeValid = controller.isModeValid();
+            catch failure
+                % A background tick can fail between the initial read and query.
+                tickError = controller.LastTickError;
+                if isempty(tickError), rethrow(failure); end
+            end
+        end
+        if isempty(tickError)
+            fprintf('Ready=%d Started=%d ModeValid=%d BasicSupported=%d Ticks=%d\n', ...
+                ready, started, modeValid, controller.BasicSupported, controller.TickCount);
+        else
+            fprintf('Ready=unknown Started=unknown ModeValid=unknown BasicSupported=%d Ticks=%d\n', ...
+                controller.BasicSupported, controller.TickCount);
+            fprintf('Tick error: %s\n', tickError);
+        end
+        if ~isempty(controller.LastCoreError)
+            fprintf('Latest Core error (process-wide): %s\n', controller.LastCoreError);
+        end
     case 'stim'
         requireCount(parts, 3, 3); controller.StimWithMode(parts{2}, number(parts{3}));
     case 'analog'

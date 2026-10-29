@@ -43,3 +43,18 @@ verifyError(testCase, @() wss_cli.parseOptions({'--transport=ble', '--test'}), '
 verifyError(testCase, @() wss_cli.parseOptions({'--transport=wifi'}), 'wss_cli:UnsupportedTransport');
 verifyError(testCase, @() wss_cli.parseOptions({'--ble-auto=false'}), 'wss_cli:UnexpectedValue');
 end
+
+function testStatusReportsTickFailureWithoutGuardedStateCalls(testCase)
+controller = struct('LastTickError', 'synthetic tick failure', ...
+    'LastCoreError', 'synthetic Core error', 'BasicSupported', true, 'TickCount', 17, ...
+    'Ready', @unsafeStateQuery, 'Started', @unsafeStateQuery, 'isModeValid', @unsafeStateQuery); %#ok<NASGU> Used by evalc.
+text = evalc("keepRunning = wss_cli.executeCommand(controller, 'status');");
+verifyTrue(testCase, keepRunning);
+verifySubstring(testCase, text, 'Ready=unknown Started=unknown');
+verifySubstring(testCase, text, 'Tick error: synthetic tick failure');
+verifySubstring(testCase, text, 'Latest Core error (process-wide): synthetic Core error');
+end
+
+function unsafeStateQuery
+error('test:UnexpectedStateQuery', 'Status queried guarded state after a known tick failure.');
+end
