@@ -65,6 +65,7 @@ verifySubstring(testCase, text, 'Serial transport constructed and disposed');
 text = evalc("code = wss_cli.main({'--wrapper-root', wrapperRoot, '--transport=conformance', '--command=status', '--command=quit'});");
 verifyEqual(testCase, code, 0);
 verifySubstring(testCase, text, 'Transport: conformance');
+verifySubstring(testCase, text, 'The prompt is active: use status');
 text = evalc("code = wss_cli.main({'--wrapper-root', wrapperRoot, '--transport=conformance'});");
 verifyEqual(testCase, code, 0);
 verifySubstring(testCase, text, 'Conformance: 10/10 passed');

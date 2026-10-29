@@ -56,7 +56,8 @@ end
 % A single cleanup boundary keeps wrapper classes on path until disposal.
 controllerCleanup = onCleanup(@() shutdownThenRestore(controller, oldPath));
 controller.Initialize();
-fprintf('WSS controller initialized; waiting for asynchronous setup.\n');
+fprintf('WSS controller initialized; setup continues in the background.\n');
+fprintf('The prompt is active: use status to inspect readiness and Core errors, or quit to exit.\n');
 fprintf('Transport: %s\n', config.Transport);
 fprintf('Config: %s\nDLLs: %s\nHost log: %s\n', config.ConfigPath, config.CsLibDir, config.LogPath);
 if ~isempty(options.Commands)

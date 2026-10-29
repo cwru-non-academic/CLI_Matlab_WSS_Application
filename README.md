@@ -92,8 +92,26 @@ Commands: `help`, `start`, `stop`, `status`, `stim`, `analog`, `reload-core`,
 shared deterministic catalog and exits, like the C# conformance entry. Supplying
 commands uses the emulator for those commands.
 Initialization is asynchronous: creation of the managed stack does not mean it
-has reached Ready. Batch command errors propagate to MATLAB's nonzero failure
+has reached Ready. The command prompt is active while setup continues: use
+`status` to inspect readiness, tick count and captured Core errors, or `quit`
+to exit. The printed host log contains Core diagnostics as well as host lifecycle
+records. Core messages are labeled process-wide because other controllers in
+the same MATLAB process can also emit them.
+Batch command errors propagate to MATLAB's nonzero failure
 exit; interactive command errors are shown without abandoning cleanup.
+
+## Device addresses
+
+`Config/stimConfig.json` explicitly exposes `broadcastTarget` (`0x8F`) and
+`wssTargets` (`0x81`, `0x82`, `0x83`). These preserve Core's historical defaults;
+configure receiver addresses to match your devices. For a first device at `0x80`,
+change the first `wssTargets` entry to `0x80` (also used in the C# CLI example).
+Firmware, stimulation parameters and calibration are separate settings.
+
+The application always supplies its own Config directory. These fields configure
+receiver addressing, not the low-level host sender byte. Core does not expose a
+`sender` JSON setting. Quit/restart the CLI after editing addresses so Core creates
+a client with the new map; `reload-core` alone does not rebuild the client.
 
 ## Checks
 
