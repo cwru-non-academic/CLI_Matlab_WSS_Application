@@ -19,7 +19,7 @@ Reference: Python CLI revision `3a0c18cb388c1bdca155ea7ba0a10e0cb45c583f`.
 ## Published wrapper baseline
 
 The submodule pins published wrapper revision
-`fdc7584e77d62b4d3a56ff608e7a1ced1afd2dcf`, including the reusable implementation,
+`671ef5c27d35f0f82b15999b1779ed57d968fa2d`, including the reusable implementation,
 Core payload, managed host and exact MIT license. The default CLI uses this
 committed submodule; no sibling checkout or local override is required.
 
@@ -64,13 +64,54 @@ log paths are anchored to the application, DLL paths to the selected wrapper.
 User path overrides are anchored when parsed. Default transport is serial, as in
 Python; use `--test` or `--conformance` for development without hardware.
 
-Options: `--serial`, `--config`, `--cs-libs`, `--log-file`, `--max-retries`, `--tick`,
+Options: `--transport serial|ble|test|conformance`, `--ble-auto`,
+`--ble-device-name NAME`, `--ble-device-id ID`, `--serial-smoke`, `--serial`, `--config`, `--cs-libs`, `--log-file`, `--max-retries`, `--tick`,
 `--test`, `--conformance`, `--command`, `--wrapper-root`, `--help`.
+Value options accept either `--name value` or C#-style `--name=value`.
+BLE selection requires automatic selection, an exact device name, or a device ID;
+Core owns discovery, ID precedence, connection and protocol behavior. For example:
+
+```matlab
+wss_cli.main({'--transport=ble', '--ble-auto'});
+wss_cli.main({'--transport=ble', '--ble-device-name=WSS'});
+wss_cli.main({'--transport=ble', '--ble-device-id=DEVICE_ID'});
+```
+
+These live commands may scan/connect hardware. `--serial-smoke` only constructs
+and disposes the serial transport. Do not combine conflicting transport aliases.
+The pinned wrapper includes BLE transport selection and platform loading.
+No local override is needed for this feature. The Core binary payload is unchanged.
+Windows/Linux BLE require the matching packaged backend and OS Bluetooth access;
+macOS BLE requires the newer Core payload containing the MacOS backend/native
+bridge. The currently pinned legacy payload lacks those macOS files and reports
+an explicit missing-backend error. No physical BLE validation is claimed.
+
 Commands: `help`, `start`, `stop`, `status`, `stim`, `analog`, `reload-core`,
 `reload-params`, `save-params`, `quit`/`exit`. Quoted reload paths may contain spaces.
+`--conformance` (or `--transport=conformance`) without `--command` runs the
+shared deterministic catalog and exits, like the C# conformance entry. Supplying
+commands uses the emulator for those commands.
 Initialization is asynchronous: creation of the managed stack does not mean it
-has reached Ready. Batch command errors propagate to MATLAB's nonzero failure
+has reached Ready. The command prompt is active while setup continues: use
+`status` to inspect readiness, tick count and captured Core errors, or `quit`
+to exit. The printed host log contains Core diagnostics as well as host lifecycle
+records. Core messages are labeled process-wide because other controllers in
+the same MATLAB process can also emit them.
+Batch command errors propagate to MATLAB's nonzero failure
 exit; interactive command errors are shown without abandoning cleanup.
+
+## Device addresses
+
+`Config/stimConfig.json` explicitly exposes `broadcastTarget` (`0x8F`) and
+`wssTargets` (`0x81`, `0x82`, `0x83`). These preserve Core's historical defaults;
+configure receiver addresses to match your devices. For a first device at `0x80`,
+change the first `wssTargets` entry to `0x80` (also used in the C# CLI example).
+Firmware, stimulation parameters and calibration are separate settings.
+
+The application always supplies its own Config directory. These fields configure
+receiver addressing, not the low-level host sender byte. Core does not expose a
+`sender` JSON setting. Quit/restart the CLI after editing addresses so Core creates
+a client with the new map; `reload-core` alone does not rebuild the client.
 
 ## Checks
 
@@ -101,6 +142,31 @@ python tests/engine/check_interactive_lifecycle.py --matlab-root 'C:/Program Fil
 It uses the MATLAB-bundled Engine API directly and installs nothing. Its temporary
 input shadow is confined to the isolated test process.
 
-Future propagation is described in the wrapper's `docs/PROPAGATION.md` and this
-repo's `automation/pipeline-contract.json`. Ordinary PR CI is documented in
-`ci/README.md`; automated Core propagation and dispatch remain inactive.
+## Propagation preparation
+
+The normal `CLI general conformance` check and separate Windows/Ubuntu/macOS
+compatibility jobs reuse the native MATLAB action. Candidate preflights require
+the same production paths and canonical cases, plus strict 27-file projection
+and source-bound provenance. A legacy macOS unsupported result cannot satisfy
+candidate Mac acceptance.
+
+The read-only receipt workflow verifies the actual human dependency merge,
+committed-state normal CI, frozen plan/tooling identities, original paired
+preflights, fresh validation against the merged wrapper and exact parent gitlink.
+It does not create, approve or merge PRs. Its tools checkout must pin an immutable
+reviewed wrapper tooling revision, published before this CLI workflow is deployed.
+
+Keep both readiness flags false and `automation/pipeline-contract.json` disabled
+until reviewed setup exists on main and dev, workflow registration/rulesets/App
+access are verified and a canonical candidate passes all real platform checks.
+Core currently excludes MATLAB from acceptance/dispatch; a separate reviewed
+Core policy/verifier update is required before activation. No dispatch or release
+acceptance is implied by this local preparation.
+
+The additional `Mac packaged BLE diagnostic (arm64)` PR job stages the verified
+27-file preparation artifact from Core run `40815407554` in a disposable copy of
+the committed wrapper. It requires actual Mac managed/native ABI loading and
+checks that CLI auto/name/id selectors reach Core without connecting hardware.
+It uses a separately pinned diagnostic tooling checkout, preserves the production
+gitlink and payload, and emits diagnostic evidence rather than acceptance
+receipts. Intel and physical BLE are separate validation requirements.
