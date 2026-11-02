@@ -142,6 +142,23 @@ python tests/engine/check_interactive_lifecycle.py --matlab-root 'C:/Program Fil
 It uses the MATLAB-bundled Engine API directly and installs nothing. Its temporary
 input shadow is confined to the isolated test process.
 
-Future propagation is described in the wrapper's `docs/PROPAGATION.md` and this
-repo's `automation/pipeline-contract.json`. Ordinary PR CI is documented in
-`ci/README.md`; automated Core propagation and dispatch remain inactive.
+## Propagation preparation
+
+The normal `CLI general conformance` check and separate Windows/Ubuntu/macOS
+compatibility jobs reuse the native MATLAB action. Candidate preflights require
+the same production paths and canonical cases, plus strict 27-file projection
+and source-bound provenance. A legacy macOS unsupported result cannot satisfy
+candidate Mac acceptance.
+
+The read-only receipt workflow verifies the actual human dependency merge,
+committed-state normal CI, frozen plan/tooling identities, original paired
+preflights, fresh validation against the merged wrapper and exact parent gitlink.
+It does not create, approve or merge PRs. Its tools checkout must pin an immutable
+reviewed wrapper tooling revision, published before this CLI workflow is deployed.
+
+Keep both readiness flags false and `automation/pipeline-contract.json` disabled
+until reviewed setup exists on main and dev, workflow registration/rulesets/App
+access are verified and a canonical candidate passes all real platform checks.
+Core currently excludes MATLAB from acceptance/dispatch; a separate reviewed
+Core policy/verifier update is required before activation. No dispatch or release
+acceptance is implied by this local preparation.
