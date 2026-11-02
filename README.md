@@ -162,3 +162,11 @@ access are verified and a canonical candidate passes all real platform checks.
 Core currently excludes MATLAB from acceptance/dispatch; a separate reviewed
 Core policy/verifier update is required before activation. No dispatch or release
 acceptance is implied by this local preparation.
+
+The additional `Mac packaged BLE diagnostic (arm64)` PR job stages the verified
+27-file preparation artifact from Core run `40815407554` in a disposable copy of
+the committed wrapper. It requires actual Mac managed/native ABI loading and
+checks that CLI auto/name/id selectors reach Core without connecting hardware.
+It uses a separately pinned diagnostic tooling checkout, preserves the production
+gitlink and payload, and emits diagnostic evidence rather than acceptance
+receipts. Intel and physical BLE are separate validation requirements.
