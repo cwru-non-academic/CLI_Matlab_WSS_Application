@@ -156,12 +156,15 @@ preflights, fresh validation against the merged wrapper and exact parent gitlink
 It does not create, approve or merge PRs. Its tools checkout must pin an immutable
 reviewed wrapper tooling revision, published before this CLI workflow is deployed.
 
-Keep both readiness flags false and `automation/pipeline-contract.json` disabled
-until reviewed setup exists on main and dev, workflow registration/rulesets/App
-access are verified and a canonical candidate passes all real platform checks.
-Core currently excludes MATLAB from acceptance/dispatch; a separate reviewed
-Core policy/verifier update is required before activation. No dispatch or release
-acceptance is implied by this local preparation.
+Approved MATLAB dev participation sets both readiness flags true and enables
+`automation/pipeline-contract.json`, with effective
+`WSS_MATLAB_PROPAGATION_ENABLED=true` in both MATLAB repositories. Deploy reviewed
+configuration on main and dev and verify workflow registration, rulesets and
+existing App access before the separately authorized Core rollout. Readiness
+permits execution; it does not accept a candidate or dispatch a workflow. Keep
+`auto_merge=false`, human dependency merges and all real candidate preflights.
+The existing receipt verifier pin and its MATLAB exclusion remain unchanged;
+release acceptance requires separate Core policy/verifier alignment.
 
 The additional `Mac packaged BLE diagnostic (arm64)` PR job stages the verified
 27-file preparation artifact from Core run `40815407554` in a disposable copy of
