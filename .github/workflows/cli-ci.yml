@@ -6,45 +6,6 @@ on:
 permissions:
   contents: read
 jobs:
-  mac-artifact-diagnostic:
-    name: Mac packaged BLE diagnostic (arm64)
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: macos-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-          submodules: recursive
-          path: source
-      - uses: actions/checkout@v4
-        with:
-          repository: cwru-non-academic/Matlab_WSS_Integration_Lib
-          ref: 689ea54f809e52ffbb9abbc539493eda626eb53e
-          persist-credentials: false
-          path: tools
-      - uses: actions/create-github-app-token@v2
-        id: read
-        with:
-          app-id: ${{ vars.WSS_GITHUB_APP_ID }}
-          private-key: ${{ secrets.WSS_GITHUB_APP_PRIVATE_KEY }}
-          owner: cwru-non-academic
-          repositories: WSSCore
-          permission-contents: read
-          permission-actions: read
-      - uses: ./tools/.github/actions/mac-artifact-diagnostic
-        with:
-          read-token: ${{ steps.read.outputs.token }}
-          role: cli
-          source-root: ${{ github.workspace }}/source
-          wrapper-root: ${{ github.workspace }}/source/external/wss-matlab-wrapper
-          tools-root: ${{ github.workspace }}/tools
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: cli-mac-packaged-ble-diagnostic
-          path: ${{ runner.temp }}/matlab-mac-artifact-diagnostic/evidence/
-          if-no-files-found: warn
   general-conformance:
     name: CLI general conformance
     runs-on: windows-latest
@@ -97,8 +58,6 @@ jobs:
             os: windows-latest
           - name: Ubuntu
             os: ubuntu-latest
-          - name: macOS
-            os: macos-latest
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
@@ -118,3 +77,105 @@ jobs:
           name: cli-compatibility-${{ matrix.name }}-evidence
           path: artifacts/ci/
           if-no-files-found: warn
+  macos-native:
+    name: CLI platform compatibility native (macOS ${{ matrix.arch }}, ${{ matrix.release }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {arch: arm64, os: macos-15, platform: MACA64, release: R2026b}
+          - {arch: x86_64, os: macos-15-intel, platform: MACI64, release: R2025b}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: recursive
+      - uses: actions/checkout@v4
+        with:
+          repository: cwru-non-academic/Matlab_WSS_Integration_Lib
+          ref: b2c937a2711e628669f608e14ba9960b651b6ffb
+          path: .mac-tools
+          persist-credentials: false
+      - name: Run native committed-state MATLAB compatibility
+        uses: ./.github/actions/native-matlab
+        with:
+          root: .
+          role: cli
+          purpose: compatibility
+          matlab-release: ${{ matrix.release }}
+          expected-platform: ${{ matrix.platform }}
+      - name: Bind the native architecture and runtime version
+        shell: pwsh
+        run: ./.mac-tools/.github/scripts/Write-MatlabMacLane.ps1 -InputPath artifacts/ci/compatibility.json -Architecture ${{ matrix.arch }} -AllowLegacy -OutputPath "$env:RUNNER_TEMP/mac-lane/compatibility.json"
+      - uses: actions/create-github-app-token@v2
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        id: read
+        with:
+          app-id: ${{ vars.WSS_GITHUB_APP_ID }}
+          private-key: ${{ secrets.WSS_GITHUB_APP_PRIVATE_KEY }}
+          owner: cwru-non-academic
+          repositories: WSSCore
+          permission-contents: read
+          permission-actions: read
+      - name: Verify preparation payload BLE ABI without radio access
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: ./.mac-tools/.github/actions/mac-artifact-diagnostic
+        with:
+          read-token: ${{ steps.read.outputs.token }}
+          role: cli
+          source-root: ${{ github.workspace }}
+          wrapper-root: ${{ github.workspace }}/external/wss-matlab-wrapper
+          tools-root: ${{ github.workspace }}/.mac-tools
+          matlab-release: ${{ matrix.release }}
+          expected-platform: ${{ matrix.platform }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cli-compatibility-macOS-a${{ github.run_attempt }}-${{ matrix.arch }}
+          path: ${{ runner.temp }}/mac-lane/compatibility.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        with:
+          name: cli-mac-packaged-ble-diagnostic-a${{ github.run_attempt }}-${{ matrix.arch }}
+          path: ${{ runner.temp }}/matlab-mac-artifact-diagnostic/evidence/
+          if-no-files-found: warn
+  macos-compatibility:
+    name: CLI platform compatibility (macOS)
+    if: always()
+    needs: [macos-native]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Require both native macOS lanes
+        shell: pwsh
+        env:
+          MACOS_NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          $needs = $env:MACOS_NEEDS_JSON | ConvertFrom-Json
+          if ($needs.'macos-native'.result -cne 'success') { throw 'A native macOS lane failed, was skipped or cancelled.' }
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: cwru-non-academic/Matlab_WSS_Integration_Lib
+          ref: b2c937a2711e628669f608e14ba9960b651b6ffb
+          path: .mac-tools
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: cli-compatibility-macOS-a${{ github.run_attempt }}-*
+          path: ${{ runner.temp }}/mac-lanes
+      - name: Require complete native evidence from both architectures
+        shell: pwsh
+        env:
+          MACOS_NEEDS_JSON: ${{ toJSON(needs) }}
+        run: ./.mac-tools/.github/scripts/Complete-MatlabMacCoverage.ps1 -EvidenceRoot "$env:RUNNER_TEMP/mac-lanes" -ArtifactPrefix 'cli-compatibility-macOS-a${{ github.run_attempt }}' -AllowLegacy -OutputPath "$env:RUNNER_TEMP/mac-coverage/compatibility.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cli-compatibility-macOS-evidence
+          path: ${{ runner.temp }}/mac-coverage/compatibility.json
+          if-no-files-found: error
