@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: cwru-non-academic/Matlab_WSS_Integration_Lib
-          ref: 3ae1854883bf5c46bcfb8b83231cd866e16d50aa
+          ref: 689ea54f809e52ffbb9abbc539493eda626eb53e
           persist-credentials: false
           path: tools
       - uses: actions/create-github-app-token@v2
@@ -57,6 +57,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - uses: actions/checkout@v4
+        with:
+          repository: cwru-non-academic/WSSCore
+          ref: be8546ca46256696bb366925b0094023d7cefc2c
+          path: .receipt-contract
+          persist-credentials: false
+      - name: Verify immutable shared release contract
+        shell: pwsh
+        env:
+          RECEIPT_CORE_ROOT: ${{ github.workspace }}/.receipt-contract
+        run: |
+          node --test .github/scripts/tests/ReviewedCoreContract.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Reviewed Core contract differs from MATLAB receivers.' }
       - name: Verify read-only receipt rejection fixtures
         shell: pwsh
         run: |
