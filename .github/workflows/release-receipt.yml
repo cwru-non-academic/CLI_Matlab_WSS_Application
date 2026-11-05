@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: cwru-non-academic/Matlab_WSS_Integration_Lib
-          ref: b2c937a2711e628669f608e14ba9960b651b6ffb
+          ref: 9f125863c789c92bfd12957c51c730da04fef500
           path: tools
           persist-credentials: false
       - uses: actions/checkout@v4
