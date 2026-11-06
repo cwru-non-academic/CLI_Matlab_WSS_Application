@@ -1,10 +1,14 @@
-name: Verify dev release acceptance
+name: Verify release acceptance
 run-name: WSS acceptance matlab-cli ${{ inputs.plan_id }}
 on:
   workflow_dispatch:
     inputs:
       producer_run_id: {required: true, type: string}
       plan_id: {required: true, type: string}
+env:
+  WSS_CI_CHANNEL: ${{ github.ref_name }}
+  WSS_TARGET_ROOT: ${{ github.workspace }}/source
+  WSS_CORE_TOOLS_ROOT: ${{ github.workspace }}/contract
 permissions:
   contents: read
   actions: read
@@ -14,7 +18,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   receipt:
-    name: Verify exact reviewed dev acceptance
+    name: Verify exact reviewed acceptance
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
@@ -27,18 +31,18 @@ jobs:
         shell: pwsh
         run: |
           $config=Get-Content source/.github/matlab-ci.json -Raw | ConvertFrom-Json
-          if ($env:GITHUB_REF -cne 'refs/heads/dev' -or $env:GITHUB_EVENT_NAME -cne 'workflow_dispatch' -or $config.baseline_ready -cne $true -or $config.candidate_preflight_ready -cne $true) { throw 'Live MATLAB acceptance remains disabled.' }
+          if ($env:GITHUB_REF -cnotin @('refs/heads/dev','refs/heads/main') -or $env:GITHUB_EVENT_NAME -cne 'workflow_dispatch' -or $config.baseline_ready -cne $true -or $config.candidate_preflight_ready -cne $true) { throw 'Live MATLAB acceptance remains disabled.' }
 
       - uses: actions/checkout@v4
         with:
           repository: cwru-non-academic/Matlab_WSS_Integration_Lib
-          ref: 0698d496633d70283de1665a94420699b815abd0
+          ref: 99099a98809fb87181f942c01ecd7c0b65724347
           path: tools
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
           repository: cwru-non-academic/WSSCore
-          ref: 83d77fb184b1de92164fa73272630d07749077d2
+          ref: d965f6abda5dcad8ddda374ac00b67f5e5ddea91
           path: contract
           persist-credentials: false
       - uses: actions/setup-node@v4
