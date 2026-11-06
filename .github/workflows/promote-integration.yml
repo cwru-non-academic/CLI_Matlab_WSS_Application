@@ -6,10 +6,14 @@ on:
       wrapper_sha: {required: true, type: string}
       wrapper_pr: {required: true, type: string}
       approval_json: {required: true, type: string}
+env:
+  WSS_CI_CHANNEL: ${{ github.ref_name }}
+  WSS_TARGET_ROOT: ${{ github.workspace }}/source
+  WSS_CORE_TOOLS_ROOT: ${{ github.workspace }}/workflow-guard
 permissions:
   contents: read
 concurrency:
-  group: matlab-promote-cli-dev
+  group: matlab-promote-cli-${{ github.ref_name }}
   cancel-in-progress: false
 jobs:
   promote:
@@ -26,11 +30,24 @@ jobs:
           path: source
           fetch-depth: 0
           persist-credentials: false
-      - name: Require enabled baseline and trusted dev workflow
+      - name: Read locked Core guard source
+        id: guard
+        shell: pwsh
+        run: |
+          $lock=Get-Content source/.github/scripts/wss-ci.lock.json -Raw|ConvertFrom-Json
+          if($lock.source_repository -cne 'cwru-non-academic/WSSCore' -or $lock.source_commit -cnotmatch '^[a-f0-9]{40}$' -or $lock.source_ref -cne "refs/heads/ci/tooling/$($lock.source_commit)"){throw 'Invalid immutable Core guard lock.'}
+          "commit=$($lock.source_commit)" >> $env:GITHUB_OUTPUT
+      - uses: actions/checkout@v4
+        with:
+          repository: cwru-non-academic/WSSCore
+          ref: ${{ steps.guard.outputs.commit }}
+          path: workflow-guard
+          persist-credentials: false
+      - name: Require enabled baseline and trusted target workflow
         shell: pwsh
         run: |
           $config=Get-Content source/.github/matlab-ci.json -Raw | ConvertFrom-Json
-          if (!$config.baseline_ready -or $env:GITHUB_REF -cne 'refs/heads/dev' -or $env:GITHUB_EVENT_NAME -cne 'workflow_dispatch') { throw 'Native candidate promotion activation remains pending.' }
+          if (!$config.baseline_ready -or $env:GITHUB_REF -cnotin @('refs/heads/dev','refs/heads/main') -or $env:GITHUB_EVENT_NAME -cne 'workflow_dispatch') { throw 'Native candidate promotion activation remains pending.' }
       - uses: actions/create-github-app-token@v2
         id: read
         with:
@@ -48,7 +65,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: cwru-non-academic/Matlab_WSS_Integration_Lib
-          ref: dev
+          ref: 99099a98809fb87181f942c01ecd7c0b65724347
           path: promotion-tools
           persist-credentials: false
       - name: Validate producer and no-op before dispatch credentials
