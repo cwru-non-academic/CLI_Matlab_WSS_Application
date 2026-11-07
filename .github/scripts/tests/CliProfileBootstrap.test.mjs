@@ -16,6 +16,8 @@ test('CLI owns the complete profile bootstrap even with the historical wrapper g
   assert.match(entry, /fullfile\(root, 'ci'\)/);
   assert.match(entry, /runMandatoryConformanceCli\(@wss_cli.createController, csLibDir\)/);
   assert.match(read('ci/runCliCi.m'), /runMandatoryConformanceCli\(@wss_cli.createController/);
+  assert.match(read('ci/runCliCi.m'), /testConformanceProfilesCli\(\);/);
+  assert.doesNotMatch(read('ci/testConformanceProfilesCli.m'), /functiontests|runtests/);
   const dispatcher = read('ci/runMandatoryConformanceCli.m');
   assert.match(dispatcher, /getConformanceProfileCli\(payload\)/);
   assert.match(dispatcher, /Canonical fixture hash mismatch/);

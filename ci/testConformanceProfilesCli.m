@@ -1,9 +1,4 @@
-function tests = TestCliConformanceProfiles
-% Test the CLI-owned classifier without relying on a newer wrapper.
-tests = functiontests(localfunctions);
-end
-
-function testCompleteAndPartialProfiles(~)
+function testConformanceProfilesCli()
 %TESTCONFORMANCEPROFILES Every missing or unexpected sentinel is rejected.
 appRoot = getenv('WSS_MATLAB_PRODUCT_ROOT');
 if isempty(appRoot), appRoot = fileparts(fileparts(mfilename('fullpath'))); end

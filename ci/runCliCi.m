@@ -19,6 +19,7 @@ switch char(purpose)
         previous = getenv('WSS_MATLAB_WRAPPER_ROOT');
         envCleanup = onCleanup(@() setenv('WSS_MATLAB_WRAPPER_ROOT', previous));
         setenv('WSS_MATLAB_WRAPPER_ROOT', '');
+        testConformanceProfilesCli();
         tests = runtests(fullfile(root, 'tests'));
         assertSuccess(tests);
         wrapper = fullfile(root, 'external', 'wss-matlab-wrapper');
