@@ -34,7 +34,7 @@ jobs:
       - name: Verify read-only receipt rejection fixtures
         shell: pwsh
         run: |
-          node --test .github/scripts/tests/ReceiptGuards.test.mjs
+          node --test .github/scripts/tests/ReceiptGuards.test.mjs .github/scripts/tests/CliProfileBootstrap.test.mjs
           if ($LASTEXITCODE -ne 0) { throw 'Receipt guards failed.' }
       - name: Run reusable native MATLAB validation
         uses: ./.github/actions/native-matlab
@@ -95,7 +95,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: cwru-non-academic/Matlab_WSS_Integration_Lib
-          ref: 71363302c69b0a1ffd4d1385fe734426f3ad5f32
+          ref: 6d362975259bbebff02e262c9f2d20836fa72c3b
           path: .mac-tools
           persist-credentials: false
       - name: Run native committed-state MATLAB compatibility
@@ -162,7 +162,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: cwru-non-academic/Matlab_WSS_Integration_Lib
-          ref: 71363302c69b0a1ffd4d1385fe734426f3ad5f32
+          ref: 6d362975259bbebff02e262c9f2d20836fa72c3b
           path: .mac-tools
           persist-credentials: false
       - uses: actions/download-artifact@v4
