@@ -23,7 +23,7 @@ switch char(purpose)
         assertSuccess(tests);
         wrapper = fullfile(root, 'external', 'wss-matlab-wrapper');
         addpath(fullfile(wrapper, 'ci'), fullfile(wrapper, 'src'));
-        [scenarios, multi, profile] = runMandatoryConformance(@wss_cli.createController, fullfile(wrapper, 'Cs_Libraries'));
+        [scenarios, multi, profile] = runMandatoryConformanceCli(@wss_cli.createController, fullfile(wrapper, 'Cs_Libraries'));
         summary = struct('purpose', purpose, 'matlab', version, 'testsPassed', sum([tests.Passed]), ...
             'scenariosPassed', sum([scenarios.Passed]), 'cases', {scenarios}, 'multiCases', {multi}, 'multiScenariosPassed', sum([multi.Passed]), 'profile', profile);
     case 'compatibility'

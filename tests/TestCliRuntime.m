@@ -72,8 +72,10 @@ text = evalc("code = wss_cli.main({'--wrapper-root', wrapperRoot, '--transport=c
 verifyEqual(testCase, code, 0);
 oldPath = path;
 cleanup = onCleanup(@() path(oldPath));
-addpath(fullfile(wrapperRoot, 'ci'), fullfile(wrapperRoot, 'src'));
-profile = getConformanceProfile(fullfile(wrapperRoot, 'Cs_Libraries'));
+appRoot = getenv('WSS_MATLAB_PRODUCT_ROOT');
+if isempty(appRoot), appRoot = fileparts(fileparts(mfilename('fullpath'))); end
+addpath(fullfile(appRoot, 'ci'), fullfile(wrapperRoot, 'src'));
+profile = getConformanceProfileCli(fullfile(wrapperRoot, 'Cs_Libraries'));
 expected = 10;
 if strcmp(profile.name, 'layered-v1'), expected = 16; end
 verifySubstring(testCase, text, sprintf('Conformance: %d/%d passed', expected, expected));

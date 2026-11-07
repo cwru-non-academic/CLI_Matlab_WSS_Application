@@ -34,7 +34,7 @@ jobs:
       - name: Verify read-only receipt rejection fixtures
         shell: pwsh
         run: |
-          node --test .github/scripts/tests/ReceiptGuards.test.mjs
+          node --test .github/scripts/tests/ReceiptGuards.test.mjs .github/scripts/tests/CliProfileBootstrap.test.mjs
           if ($LASTEXITCODE -ne 0) { throw 'Receipt guards failed.' }
       - name: Run reusable native MATLAB validation
         uses: ./.github/actions/native-matlab
