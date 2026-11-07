@@ -18,10 +18,11 @@ Reference: Python CLI revision `3a0c18cb388c1bdca155ea7ba0a10e0cb45c583f`.
 
 ## Published wrapper baseline
 
-The submodule pins published wrapper revision
-`671ef5c27d35f0f82b15999b1779ed57d968fa2d`, including the reusable implementation,
-Core payload, managed host and exact MIT license. The default CLI uses this
-committed submodule; no sibling checkout or local override is required.
+The committed `external/wss-matlab-wrapper` Git submodule entry is the
+runtime wrapper revision for this checkout. It includes the reusable
+implementation, Core payload, managed host and MIT license. The default CLI
+uses this committed submodule; no sibling checkout or local override is required.
+Inspect the actual pin with `git ls-tree HEAD external/wss-matlab-wrapper`.
 
 The explicit `--wrapper-root` override remains available for deliberate local
 development against a separate wrapper checkout. It never changes the gitlink.
@@ -80,11 +81,11 @@ wss_cli.main({'--transport=ble', '--ble-device-id=DEVICE_ID'});
 These live commands may scan/connect hardware. `--serial-smoke` only constructs
 and disposes the serial transport. Do not combine conflicting transport aliases.
 The pinned wrapper includes BLE transport selection and platform loading.
-No local override is needed for this feature. The Core binary payload is unchanged.
-Windows/Linux BLE require the matching packaged backend and OS Bluetooth access;
-macOS BLE requires the newer Core payload containing the MacOS backend/native
-bridge. The currently pinned legacy payload lacks those macOS files and reports
-an explicit missing-backend error. No physical BLE validation is claimed.
+No local override is needed for this feature. This DEV checkout's pinned payload
+includes `backends/macos/WSS.Transport.BLE.MacOS.dll` and
+`backends/macos/libwss_macos_ble.dylib`. BLE still requires the matching packaged
+backend, a supported native runtime and OS Bluetooth access. The native
+compatibility and ABI checks below do not establish physical BLE operation.
 
 Commands: `help`, `start`, `stop`, `status`, `stim`, `analog`, `reload-core`,
 `reload-params`, `save-params`, `quit`/`exit`. Quoted reload paths may contain spaces.
@@ -110,8 +111,9 @@ Firmware, stimulation parameters and calibration are separate settings.
 
 The application always supplies its own Config directory. These fields configure
 receiver addressing, not the low-level host sender byte. Core does not expose a
-`sender` JSON setting. Quit/restart the CLI after editing addresses so Core creates
-a client with the new map; `reload-core` alone does not rebuild the client.
+`sender` JSON setting. After editing addresses, use `reload-core` to reconstruct
+the client with the new map, or quit and restart the CLI. See the coordinated
+reload contract below for this DEV checkout's pinned wrapper.
 
 ## Checks
 
@@ -123,15 +125,22 @@ addpath('conformance');
 results = runCliConformance(fullfile(pwd, '..', 'Matlab_WSS_Integration_Lib'));
 ```
 
-The consumer conformance entry uses `wss_cli.createController`, not a substitute
-managed/Python implementation. On MATLAB R2026b with .NET 8, all 10 consumer
-catalog scenarios passed, and the MATLAB unit/runtime suite passed including
-CLI quit and command-failure disposal. The Engine harness also passed blocking
-input-double quit/interruption/quit, with real MATLAB cancellation and repeated
-cleanup. Native console input/keyboard Ctrl+C remain manual checks. Windows
-serial/BLE load-only compatibility passed separately; Ubuntu/macOS remain
-unverified. No port was opened or physical device connected. The managed helper
-has separate .NET-only checks in the wrapper.
+[Normal CLI CI](.github/workflows/cli-ci.yml) runs the production
+`wss_cli.createController` path, MATLAB Code Analyzer, the required native test
+contract and the single-/multi-device conformance profiles through
+[`runCliCi`](ci/runCliCi.m). The reusable
+[native MATLAB action](.github/actions/native-matlab/action.yml) builds the managed
+host before running the CLI's native MATLAB entry point. Standalone managed-host
+lifecycle/ticking checks run separately in wrapper behavioral CI, only when the
+action uses `role=wrapper` and `purpose=behavioral`.
+
+Compatibility jobs cover Windows, Ubuntu and native macOS ARM64/R2026b and
+Intel/R2025b. The macOS aggregate requires both native lanes and their evidence;
+a single architecture is insufficient. General conformance uses R2026b. These
+checks exercise emulator behavior, loading and transport selection, not physical
+stimulation. Native console input/keyboard Ctrl+C remain manual checks. The
+Windows Engine lifecycle harness is a separate local check, not a claim that
+normal CI exercises a human-operated console.
 
 Run the Windows Engine lifecycle harness with an existing supported Python:
 
@@ -142,7 +151,7 @@ python tests/engine/check_interactive_lifecycle.py --matlab-root 'C:/Program Fil
 It uses the MATLAB-bundled Engine API directly and installs nothing. Its temporary
 input shadow is confined to the isolated test process.
 
-## Propagation preparation
+## Verified dependency propagation
 
 The normal `CLI general conformance` check and separate Windows/Ubuntu/macOS
 compatibility jobs reuse the native MATLAB action. Candidate preflights require
@@ -156,26 +165,67 @@ preflights, fresh validation against the merged wrapper and exact parent gitlink
 It does not create, approve or merge PRs. Its tools checkout must pin an immutable
 reviewed wrapper tooling revision, published before this CLI workflow is deployed.
 
-Approved MATLAB dev participation sets both readiness flags true and enables
-`automation/pipeline-contract.json`, with effective
-`WSS_MATLAB_PROPAGATION_ENABLED=true` in both MATLAB repositories. Deploy reviewed
-configuration on main and dev and verify workflow registration, rulesets and
-existing App access before the separately authorized Core rollout. Readiness
-permits execution; it does not accept a candidate or dispatch a workflow. Keep
-`auto_merge=false`, human dependency merges and all real candidate preflights.
-The existing receipt verifier pin and its MATLAB exclusion remain unchanged;
-release acceptance requires separate Core policy/verifier alignment.
+The [pipeline contract](automation/pipeline-contract.json) enables DEV
+participation and requires gitlink-only dependency PRs, human merge and
+`auto_merge=false`. Readiness permits execution; it does not itself accept a
+candidate, dispatch a workflow or authorize publication. Acceptance requires the
+frozen Core plan, actual wrapper/application dependency merges, normal CI and
+matching receipts. MATLAB wrapper and CLI participate in the DEV nine-target
+acceptance contract; the old MATLAB exclusion is not the current DEV contract.
+DEV acceptance does not establish MAIN adoption or a release.
 
-The additional `Mac packaged BLE diagnostic (arm64)` PR job stages the verified
-27-file preparation artifact from Core run `40815407554` in a disposable copy of
-the committed wrapper. It requires actual Mac managed/native ABI loading and
-checks that CLI auto/name/id selectors reach Core without connecting hardware.
-It uses a separately pinned diagnostic tooling checkout, preserves the production
-gitlink and payload, and emits diagnostic evidence rather than acceptance
-receipts. Intel and physical BLE are separate validation requirements.
+On same-repository PRs, the native macOS lanes also run a separately pinned
+preparation-payload BLE ABI diagnostic in a disposable copy on both architectures.
+It preserves the production gitlink/payload and produces diagnostic evidence,
+not acceptance receipts. It does not replace committed-state compatibility,
+candidate preflights or physical BLE validation.
 
-### Reload payload compatibility
+## Coordinated configuration reload
 
-Reload commands forward to the pinned wrapper and Core. The historical Core payloads currently pinned by this application's dev/main branches reload only calibration for `reload-params`; without a path they reload its active file. `reload-core` reads Core JSON without rebuilding the client. These pins do not yet implement modern coordinated reload. Quoted file or directory paths containing spaces pass through the real command parser unchanged.
+These commands use the coordinated reload support in the wrapper pinned by this
+DEV checkout. Older checkouts and MAIN must be checked against their own wrapper
+source and Core payload; updating Core alone does not add the host reset behavior.
 
-When a supported product update adopts modern Core, parameter reload reads all three JSONs from startup defaults, or all three from a supplied directory. A supplied calibration file uses startup-default Core/model files, not sibling files. With the C#-parity wrapper, effective Core changes reconstruct the stack from Core's validated snapshot; `reload-core` reads active Core only, preserving applied calibration/model values and paths, including unsaved edits. An inactive Core reset is a no-op. The current historical application pins do not provide these semantics. Additive command tests exercise both installed legacy behavior and a separately identified modern-wrapper proof; the latter does not change or validate a new product pin.
+Enter `reload-core`, `reload-params [path]`, or `save-params` at the interactive
+prompt. Do not type the brackets. The commands call `LoadCoreConfigFile()`,
+`LoadParamsJson()` / `LoadParamsJson(path)`, and `SaveParamsJson()` respectively.
+
+- `reload-params` rereads all three startup-default files: `stimConfig.json`,
+  `stimParams.json`, and `modelConfig.json`. It returns to those defaults even
+  after selecting another profile.
+- `reload-params ./Config/profile` selects all three standard filenames in that
+  directory.
+- `reload-params ./Config/customParams.json` selects that calibration file with
+  the startup-default Core and model files, **not sibling files** next to the
+  selected calibration file. All three JSON files are still read and validated.
+- `reload-core` reads the active Core file, retains currently applied in-memory
+  calibration/model values and paths (including unsaved edits), and reconstructs
+  Core through the host reset path, including its receiver address map. It
+  reconstructs even if Core values are unchanged. Before initialization this
+  Core reset is a no-op.
+- `save-params` writes active stimulation parameters to the selected calibration
+  file. It does not save device configuration or persist the Core/model files.
+
+The startup defaults come from the application's resolved configuration directory
+(`Config/` in the app repository unless overridden at startup). Startup paths
+remain anchored even if the process working directory changes. Relative explicit
+reload paths are resolved against the process working directory.
+
+Reload stages and validates files before changing the active stack. Any effective
+Core configuration change uses the existing reset path: stop ticking, dispose the
+old stack (Core zeros output and disconnects), construct the validated replacement,
+and resume initialization/ticking. Unchanged Core permits calibration/model
+updates without reconnecting. A reset does not replay previous stimulation values.
+`reload-core` retains applied calibration/model values; `reload-params` rereads them.
+Use `status` to check asynchronous setup and wait for `Started` before sending new
+stimulation commands after reconstruction. A printed reload message does not
+establish device readiness or physical output.
+
+Invalid JSON leaves the active stack unchanged. Cleanup or construction failure
+can leave the controller unavailable; inspect the reported error rather than
+assuming the replacement is ready. Use a disposable configuration copy with the
+simulated transport when practicing reloads or `save-params`.
+
+The MATLAB command parser preserves the entire reload path suffix and accepts
+optional double quotes, so file or directory paths may contain spaces. For example:
+`reload-params "C:/WSS Practice/Config/stimParams.json"`.
