@@ -21,9 +21,11 @@ switch char(purpose)
         setenv('WSS_MATLAB_WRAPPER_ROOT', '');
         tests = runtests(fullfile(root, 'tests'));
         assertSuccess(tests);
-        scenarios = runCliConformance();
+        wrapper = fullfile(root, 'external', 'wss-matlab-wrapper');
+        addpath(fullfile(wrapper, 'ci'), fullfile(wrapper, 'src'));
+        [scenarios, multi, profile] = runMandatoryConformance(@wss_cli.createController, fullfile(wrapper, 'Cs_Libraries'));
         summary = struct('purpose', purpose, 'matlab', version, 'testsPassed', sum([tests.Passed]), ...
-            'scenariosPassed', sum([scenarios.Passed]), 'cases', {scenarios});
+            'scenariosPassed', sum([scenarios.Passed]), 'cases', {scenarios}, 'multiCases', {multi}, 'multiScenariosPassed', sum([multi.Passed]), 'profile', profile);
     case 'compatibility'
         summary = checkCliCompatibility();
         summary.purpose = purpose;
