@@ -246,7 +246,8 @@ Firmware, stimulation parameters and calibration are separate settings.
 The application always supplies its own Config directory. These fields configure
 receiver addressing, not the low-level host sender byte. Core does not expose a
 `sender` JSON setting. Quit/restart the CLI after editing addresses so Core creates
-a client with the new map; `reload-core` alone does not rebuild the client.
+a client with the new map. With a coordinated-reload wrapper, `reload-core`
+performs that reconstruction; wait for `Started` before new stimulation.
 
 ## Checks
 
