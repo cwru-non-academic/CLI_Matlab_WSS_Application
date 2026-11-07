@@ -1,0 +1,17 @@
+{
+  "schema": "wss-matlab-native-tests/v1",
+  "role": "cli",
+  "ids": [
+    "TestCliOptions/testResolvesAppOwnedPaths",
+    "TestCliOptions/testRejectsBadArgumentsBeforeControllerCreation",
+    "TestCliOptions/testHelpDoesNotRequireInitializedSubmodule",
+    "TestCliOptions/testCSharpSyntaxAndBleSelectors",
+    "TestCliOptions/testStatusReportsTickFailureWithoutGuardedStateCalls",
+    "TestCliRuntime/testQuitAndCommandFailureDisposeHost",
+    "TestCliRuntime/testBleArgumentsReachActualCoreTransportWithoutConnecting",
+    "TestCliRuntime/testSerialSmokeAndNamedTransportUseProductionEntry",
+    "TestCliRuntime/testConformanceRejectsMissingSelectedPayload",
+    "TestCommandReloadBoundary/testReloadPathsAndCoreBoundary",
+    "TestCommandReloadBoundary/testUninitializedErrorsPropagate"
+  ]
+}
