@@ -70,7 +70,13 @@ verifySubstring(testCase, text, 'Transport: conformance');
 verifySubstring(testCase, text, 'The prompt is active: use status');
 text = evalc("code = wss_cli.main({'--wrapper-root', wrapperRoot, '--transport=conformance'});");
 verifyEqual(testCase, code, 0);
-verifySubstring(testCase, text, 'Conformance: 10/10 passed');
+oldPath = path;
+cleanup = onCleanup(@() path(oldPath));
+addpath(fullfile(wrapperRoot, 'ci'));
+profile = getConformanceProfile(fullfile(wrapperRoot, 'Cs_Libraries'));
+expected = 10;
+if strcmp(profile.name, 'layered-v1'), expected = 16; end
+verifySubstring(testCase, text, sprintf('Conformance: %d/%d passed', expected, expected));
 end
 
 function testConformanceRejectsMissingSelectedPayload(testCase)
