@@ -4,7 +4,8 @@ tests = functiontests(localfunctions);
 end
 
 function testQuitAndCommandFailureDisposeHost(testCase)
-appRoot = fileparts(fileparts(mfilename('fullpath')));
+appRoot = getenv('WSS_MATLAB_PRODUCT_ROOT');
+if isempty(appRoot), appRoot = fileparts(fileparts(mfilename('fullpath'))); end
 wrapperRoot = getenv('WSS_MATLAB_WRAPPER_ROOT');
 if isempty(wrapperRoot), wrapperRoot = fullfile(appRoot, 'external', 'wss-matlab-wrapper'); end
 directory = tempname;
@@ -22,7 +23,8 @@ verifySubstring(testCase, fileread(errorLog), 'Disposed');
 end
 
 function testBleArgumentsReachActualCoreTransportWithoutConnecting(testCase)
-appRoot = fileparts(fileparts(mfilename('fullpath')));
+appRoot = getenv('WSS_MATLAB_PRODUCT_ROOT');
+if isempty(appRoot), appRoot = fileparts(fileparts(mfilename('fullpath'))); end
 wrapperRoot = getenv('WSS_MATLAB_WRAPPER_ROOT');
 if isempty(wrapperRoot), wrapperRoot = fullfile(appRoot, 'external', 'wss-matlab-wrapper'); end
 oldPath = path;
