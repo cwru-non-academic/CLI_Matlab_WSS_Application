@@ -20,12 +20,17 @@ switch char(purpose)
         envCleanup = onCleanup(@() setenv('WSS_MATLAB_WRAPPER_ROOT', previous));
         setenv('WSS_MATLAB_WRAPPER_ROOT', '');
         testConformanceProfilesCli();
-        tests = runtests(fullfile(root, 'tests'));
+        suite = testsuite(fullfile(root, 'tests'));
+        assertNativeTestContract(root, 'cli', {suite.Name});
+        tests = run(suite);
         assertSuccess(tests);
+        assertNativeTestContract(root, 'cli', {tests.Name});
         wrapper = fullfile(root, 'external', 'wss-matlab-wrapper');
         addpath(fullfile(wrapper, 'ci'), fullfile(wrapper, 'src'));
         [scenarios, multi, profile] = runMandatoryConformanceCli(@wss_cli.createController, fullfile(wrapper, 'Cs_Libraries'));
         summary = struct('purpose', purpose, 'matlab', version, 'testsPassed', sum([tests.Passed]), ...
+            'nativeTests', struct('ids', {{tests.Name}}, 'passed', [tests.Passed], ...
+                'failed', [tests.Failed], 'incomplete', [tests.Incomplete]), ...
             'scenariosPassed', sum([scenarios.Passed]), 'cases', {scenarios}, 'multiCases', {multi}, 'multiScenariosPassed', sum([multi.Passed]), 'profile', profile);
     case 'compatibility'
         summary = checkCliCompatibility();
