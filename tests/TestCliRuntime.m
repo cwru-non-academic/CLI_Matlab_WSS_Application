@@ -59,7 +59,7 @@ end
 function testSerialSmokeAndNamedTransportUseProductionEntry(testCase)
 wrapperRoot = getenv('WSS_MATLAB_WRAPPER_ROOT');
 if isempty(wrapperRoot)
-    wrapperRoot = fullfile(fileparts(fileparts(mfilename('fullpath'))), 'external', 'wss-matlab-wrapper'); %#ok<NASGU> Used by evalc.
+    wrapperRoot = fullfile(fileparts(fileparts(mfilename('fullpath'))), 'external', 'wss-matlab-wrapper');
 end
 text = evalc("code = wss_cli.main({'--wrapper-root', wrapperRoot, '--serial-smoke'});");
 verifyEqual(testCase, code, 0);
