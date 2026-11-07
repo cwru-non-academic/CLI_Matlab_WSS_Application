@@ -173,3 +173,9 @@ checks that CLI auto/name/id selectors reach Core without connecting hardware.
 It uses a separately pinned diagnostic tooling checkout, preserves the production
 gitlink and payload, and emits diagnostic evidence rather than acceptance
 receipts. Intel and physical BLE are separate validation requirements.
+
+### Reload payload compatibility
+
+Reload commands forward to the pinned wrapper and Core. The historical Core payloads currently pinned by this application's dev/main branches reload only calibration for `reload-params`; without a path they reload its active file. `reload-core` reads Core JSON without rebuilding the client. These pins do not yet implement modern coordinated reload. Quoted file or directory paths containing spaces pass through the real command parser unchanged.
+
+When a supported product update adopts modern Core, parameter reload reads all three JSONs from startup defaults, or all three from a supplied directory. A supplied calibration file uses startup-default Core/model files, not sibling files. Effective Core changes trigger Core's restart; `reload-core` reloads all active files and reinitializes, rather than retaining unsaved calibration/model edits. Additive command tests exercise both installed legacy behavior and a separately identified modern-wrapper proof; the latter does not change or validate a new product pin.
