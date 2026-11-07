@@ -1,6 +1,7 @@
-function result = checkCliCompatibility(wrapperRoot)
+function result = checkCliCompatibility(wrapperRoot, productRoot)
 %CHECKCLICOMPATIBILITY Verify consumer path resolution and wrapper runtime assets.
-root = fileparts(fileparts(mfilename('fullpath')));
+if nargin < 2, productRoot = fileparts(fileparts(mfilename('fullpath'))); end
+root = productRoot;
 if nargin < 1, wrapperRoot = fullfile(root, 'external', 'wss-matlab-wrapper'); end
 oldPath = path;
 cleanup = onCleanup(@() path(oldPath));

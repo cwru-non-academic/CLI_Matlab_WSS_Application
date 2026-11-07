@@ -4,7 +4,8 @@ tests = functiontests(localfunctions);
 end
 
 function testQuitAndCommandFailureDisposeHost(testCase)
-appRoot = fileparts(fileparts(mfilename('fullpath')));
+appRoot = getenv('WSS_MATLAB_PRODUCT_ROOT');
+if isempty(appRoot), appRoot = fileparts(fileparts(mfilename('fullpath'))); end
 wrapperRoot = getenv('WSS_MATLAB_WRAPPER_ROOT');
 if isempty(wrapperRoot), wrapperRoot = fullfile(appRoot, 'external', 'wss-matlab-wrapper'); end
 directory = tempname;
@@ -22,7 +23,8 @@ verifySubstring(testCase, fileread(errorLog), 'Disposed');
 end
 
 function testBleArgumentsReachActualCoreTransportWithoutConnecting(testCase)
-appRoot = fileparts(fileparts(mfilename('fullpath')));
+appRoot = getenv('WSS_MATLAB_PRODUCT_ROOT');
+if isempty(appRoot), appRoot = fileparts(fileparts(mfilename('fullpath'))); end
 wrapperRoot = getenv('WSS_MATLAB_WRAPPER_ROOT');
 if isempty(wrapperRoot), wrapperRoot = fullfile(appRoot, 'external', 'wss-matlab-wrapper'); end
 oldPath = path;
@@ -57,7 +59,7 @@ end
 function testSerialSmokeAndNamedTransportUseProductionEntry(testCase)
 wrapperRoot = getenv('WSS_MATLAB_WRAPPER_ROOT');
 if isempty(wrapperRoot)
-    wrapperRoot = fullfile(fileparts(fileparts(mfilename('fullpath'))), 'external', 'wss-matlab-wrapper'); %#ok<NASGU> Used by evalc.
+    wrapperRoot = fullfile(fileparts(fileparts(mfilename('fullpath'))), 'external', 'wss-matlab-wrapper');
 end
 text = evalc("code = wss_cli.main({'--wrapper-root', wrapperRoot, '--serial-smoke'});");
 verifyEqual(testCase, code, 0);
@@ -68,7 +70,15 @@ verifySubstring(testCase, text, 'Transport: conformance');
 verifySubstring(testCase, text, 'The prompt is active: use status');
 text = evalc("code = wss_cli.main({'--wrapper-root', wrapperRoot, '--transport=conformance'});");
 verifyEqual(testCase, code, 0);
-verifySubstring(testCase, text, 'Conformance: 10/10 passed');
+oldPath = path;
+cleanup = onCleanup(@() path(oldPath));
+appRoot = getenv('WSS_MATLAB_PRODUCT_ROOT');
+if isempty(appRoot), appRoot = fileparts(fileparts(mfilename('fullpath'))); end
+addpath(fullfile(appRoot, 'ci'), fullfile(wrapperRoot, 'src'));
+profile = getConformanceProfileCli(fullfile(wrapperRoot, 'Cs_Libraries'));
+expected = 10;
+if strcmp(profile.name, 'layered-v1'), expected = 16; end
+verifySubstring(testCase, text, sprintf('Conformance: %d/%d passed', expected, expected));
 end
 
 function testConformanceRejectsMissingSelectedPayload(testCase)
