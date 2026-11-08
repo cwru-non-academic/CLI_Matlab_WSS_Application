@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: cwru-non-academic/WSSCore
-          ref: 17ce329d027d28942d5c65a0375c2a9a83e993e6
+          ref: d52ea2e6f2a8950d11c906545622ee5e8e40bdf0
           path: .receipt-contract
           persist-credentials: false
       - name: Verify immutable shared release contract
@@ -95,7 +95,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: cwru-non-academic/Matlab_WSS_Integration_Lib
-          ref: 65cb8ba242e2eac16fb3b8e6e0c7a2442d363f28
+          ref: e24531dbf1b8ed163c8d0c7ef2d08e0d7894f285
           path: .mac-tools
           persist-credentials: false
       - name: Run native committed-state MATLAB compatibility
@@ -162,7 +162,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: cwru-non-academic/Matlab_WSS_Integration_Lib
-          ref: 65cb8ba242e2eac16fb3b8e6e0c7a2442d363f28
+          ref: e24531dbf1b8ed163c8d0c7ef2d08e0d7894f285
           path: .mac-tools
           persist-credentials: false
       - uses: actions/download-artifact@v4
