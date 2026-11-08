@@ -23,3 +23,17 @@ test('CLI owns the complete profile bootstrap even with the historical wrapper g
   assert.match(dispatcher, /Canonical fixture hash mismatch/);
   assert.match(dispatcher, /checkCases\(multi,/);
 });
+
+test('CLI dispatcher defaults use the app factory and committed wrapper without replacing overrides', () => {
+  const dispatcher = read('ci/runMandatoryConformanceCli.m');
+  assert.match(dispatcher, /if nargin < 1, factory = @wss_cli.createController; end/);
+  assert.match(dispatcher, /if nargin < 2, payload = fullfile\(root, 'external', 'wss-matlab-wrapper', 'Cs_Libraries'\); end/);
+  const ordinary = read('ci/runCliCi.m');
+  assert.match(ordinary, /\[scenarios, multi, profile\] = runMandatoryConformanceCli\(@wss_cli.createController, fullfile\(wrapper, 'Cs_Libraries'\)\);/);
+  assert.match(ordinary, /\[defaultScenarios, defaultMulti, defaultProfile\] = runMandatoryConformanceCli\(\);/);
+  assert.match(ordinary, /assert\(isequal\(defaultScenarios, scenarios\) && isequal\(defaultMulti, multi\) && isequal\(defaultProfile, profile\),/);
+  const entry = read('conformance/runCliConformance.m');
+  assert.match(entry, /root = productRoot;/);
+  assert.match(entry, /addpath\(fullfile\(root, 'src'\), fullfile\(wrapperRoot, 'src'\), fullfile\(root, 'ci'\)\);/);
+  assert.match(entry, /runMandatoryConformanceCli\(@wss_cli.createController, csLibDir\)/);
+});
