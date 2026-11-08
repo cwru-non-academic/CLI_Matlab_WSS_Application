@@ -1,5 +1,5 @@
 function tests = TestCommandReloadBoundary
-% Actual CLI reload commands with real wrapper/Core and emulator.
+% Actual CLI reload commands, with separately identified legacy/modern wrapper products.
 tests = functiontests(localfunctions);
 end
 
@@ -41,17 +41,17 @@ writeProfile(profile, devices, 5, .2);
 reload(c, 'params', profile); waitStarted(c);
 if modern
     verifyEqual(testCase, double(c.GetCoreConfigCTRL().MaxWss), 3);
-    verifyGreaterThan(testCase, setupCount(c), initialSetups, 'Directory Core change must repeat setup.');
+    verifyRebuilt(testCase, original, c);
 end
 if modern, pw = 60; else, pw = 100; end
 observe(c, @() stimulate(c, modern), pw, 5);
 file = fullfile(profile, 'custom parameters.json');
 copyfile(fullfile(profile, 'stimParams.json'), file);
-beforeFile = setupCount(c);
+beforeFile = c.GetConformance();
 reload(c, 'params', file); waitStarted(c);
 if modern
     verifyEqual(testCase, double(c.GetCoreConfigCTRL().MaxWss), 1, 'Explicit file must use startup Core, not sibling Core.');
-    verifyGreaterThan(testCase, setupCount(c), beforeFile, 'Returning to startup Core must repeat setup.');
+    verifyRebuilt(testCase, beforeFile, c);
 end
 if modern, pw = 75; else, pw = 100; end
 observe(c, @() stimulate(c, modern), pw, 5);
@@ -64,26 +64,29 @@ observe(c, @() stimulate(c, modern), pw, amp);
 if modern
     reload(c, 'params', profile); waitStarted(c);
     verifyEqual(testCase, double(c.GetCoreConfigCTRL().MaxWss), 3);
-    beforeReturn = setupCount(c);
+    beforeReturn = c.GetConformance();
     reload(c, 'params'); waitStarted(c);
     verifyEqual(testCase, double(c.GetCoreConfigCTRL().MaxWss), 1, 'Parameterless reload must return to startup Core.');
-    verifyGreaterThan(testCase, setupCount(c), beforeReturn);
+    verifyRebuilt(testCase, beforeReturn, c);
     observe(c, @() stimulate(c, modern), 75, 4);
-    % Active all-JSON Core reload, not snapshot-host retained-value semantics.
+    % CSharp parity: Core-only reset preserves applied calibration/model values.
     writeProfile(root, 2, 7, .4);
-    beforeChanged = setupCount(c);
+    beforeChanged = c.GetConformance();
     reload(c, 'params'); waitStarted(c);
-    verifyGreaterThan(testCase, setupCount(c), beforeChanged, 'Changed Core parameter reload must repeat setup.');
+    verifyRebuilt(testCase, beforeChanged, c);
     verifyEqual(testCase, double(c.GetCoreConfigCTRL().MaxWss), 2);
     observe(c, @() stimulate(c, modern), 70, 7);
     for k = 1:2
-        beforeCore = setupCount(c);
+        beforeCore = c.GetConformance();
         reload(c, 'core'); waitStarted(c);
-        verifyGreaterThan(testCase, setupCount(c), beforeCore, 'Every Core reload must repeat setup even with unchanged JSON.');
+        verifyRebuilt(testCase, beforeCore, c);
         observe(c, @() stimulate(c, modern), 70, 7);
     end
     writeText(fullfile(root, 'modelConfig.json'), 'invalid');
     verifyFailure(testCase, @() reload(c, 'params'));
+    reload(c, 'core'); waitStarted(c);
+    observe(c, @() stimulate(c, modern), 70, 7);
+    writeText(fullfile(root, 'stimConfig.json'), 'invalid');
     verifyFailure(testCase, @() reload(c, 'core'));
     verifyEqual(testCase, double(c.GetCoreConfigCTRL().MaxWss), 2);
     observe(c, @() stimulate(c, modern), 70, 7);
@@ -98,7 +101,13 @@ function testUninitializedErrorsPropagate(testCase)
 [root, c] = fixture();
 cleanup = onCleanup(@() release(c, root));
 verifyError(testCase, @() reload(c, 'params'), 'wss:NotInitialized');
-verifyError(testCase, @() reload(c, 'core'), 'wss:NotInitialized');
+if ismethod(c, 'RetryReload')
+    reload(c, 'core');
+    verifyFalse(testCase, c.Ready());
+    verifyEqual(testCase, c.TickCount, 0);
+else
+    verifyError(testCase, @() reload(c, 'core'), 'wss:NotInitialized');
+end
 end
 
 function reload(c, kind, varargin)
@@ -126,6 +135,12 @@ catch
     failed = true;
 end
 verifyTrue(testCase, failed, 'Core failure must reach the caller.');
+end
+
+function verifyRebuilt(testCase, previous, c)
+verifyFalse(testCase, System.Object.ReferenceEquals(previous, c.GetConformance()), ...
+    'Changed Core or explicit reset must replace the retired transport.');
+verifyGreaterThan(testCase, setupCount(c), 0, 'The replacement must perform actual setup.');
 end
 
 function count = setupCount(c)
