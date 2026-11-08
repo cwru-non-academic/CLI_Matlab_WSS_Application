@@ -65,7 +65,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: cwru-non-academic/Matlab_WSS_Integration_Lib
-          ref: 94255407e09198d6d50b8ef8c06f318e199309bc
+          ref: 34c0ee48a7cb373e8a892b4ad98904e9c2342ea7
           path: promotion-tools
           persist-credentials: false
       - name: Validate producer and no-op before dispatch credentials
