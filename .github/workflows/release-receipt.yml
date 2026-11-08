@@ -26,7 +26,7 @@ jobs:
       PLAN_ID: ${{ inputs.plan_id }}
       WSS_RECEIPT_ENGINE_SHA: 6f73f3c83ac9468302957923d77edd23de644ffd
       WSS_RECEIPT_CORE_SHA: 60257c5c1be34b562fb171d5be10a61429f14d61
-      WSS_RECEIPT_VALIDATOR_SHA: bc0df575faf6bb56c9dcc4460579d6b0bb140d4c
+      WSS_RECEIPT_VALIDATOR_SHA: a1b8fafae1967a88346dac025f10be361ca8f279
     steps:
       - name: Require static caller eligibility before credentials
         shell: pwsh
@@ -55,7 +55,7 @@ jobs:
         if: ${{ true }}
         with:
           repository: cwru-non-academic/Matlab_WSS_Integration_Lib
-          ref: bc0df575faf6bb56c9dcc4460579d6b0bb140d4c
+          ref: a1b8fafae1967a88346dac025f10be361ca8f279
           path: validator
           persist-credentials: false
       - uses: actions/checkout@v4
