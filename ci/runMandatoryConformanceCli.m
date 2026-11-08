@@ -1,8 +1,8 @@
 function [cases, multi, profile] = runMandatoryConformanceCli(factory, payload)
 %RUNMANDATORYCONFORMANCE Trusted product fixture dispatch, never selected tests.
 root = fileparts(fileparts(mfilename('fullpath')));
-if nargin < 1, factory = @wss.StimulationController; end
-if nargin < 2, payload = fullfile(root, 'Cs_Libraries'); end
+if nargin < 1, factory = @wss_cli.createController; end
+if nargin < 2, payload = fullfile(root, 'external', 'wss-matlab-wrapper', 'Cs_Libraries'); end
 config = jsondecode(fileread(fullfile(root, '.github', 'matlab-ci.json')));
 profile = getConformanceProfileCli(payload);
 oldPath = path;
