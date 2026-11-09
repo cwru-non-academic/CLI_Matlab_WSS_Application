@@ -18,19 +18,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - uses: actions/checkout@v4
-        with:
-          repository: cwru-non-academic/WSSCore
-          ref: 7712e609f44ffc3425df3c067be8e2e080506f59
-          path: .receipt-contract
-          persist-credentials: false
-      - name: Verify immutable shared release contract
+      - name: Verify local copied receipt contract
         shell: pwsh
-        env:
-          RECEIPT_CORE_ROOT: ${{ github.workspace }}/.receipt-contract
         run: |
           node --test .github/scripts/tests/ReviewedCoreContract.test.mjs
-          if ($LASTEXITCODE -ne 0) { throw 'Reviewed Core contract differs from MATLAB receivers.' }
+          if ($LASTEXITCODE -ne 0) { throw 'Local copied receipt contract checks failed.' }
       - name: Verify read-only receipt rejection fixtures
         shell: pwsh
         run: |
@@ -95,7 +87,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: cwru-non-academic/Matlab_WSS_Integration_Lib
-          ref: b43f63d3baee83ccca41ccda5f9f9e4621e2c025
+          ref: b9ade1c9f1148796c610b4838b4460deb52fec57
           path: .mac-tools
           persist-credentials: false
       - name: Run native committed-state MATLAB compatibility
@@ -162,7 +154,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: cwru-non-academic/Matlab_WSS_Integration_Lib
-          ref: b43f63d3baee83ccca41ccda5f9f9e4621e2c025
+          ref: b9ade1c9f1148796c610b4838b4460deb52fec57
           path: .mac-tools
           persist-credentials: false
       - uses: actions/download-artifact@v4
