@@ -87,7 +87,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: cwru-non-academic/Matlab_WSS_Integration_Lib
-          ref: 34a4b8da03e7c52ef567ee7948a08b8a1e7c1800
+          ref: bd938dd4661ff2bc327a2833c02e48a812de1d33
           path: .mac-tools
           persist-credentials: false
       - name: Run native committed-state MATLAB compatibility
@@ -154,7 +154,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: cwru-non-academic/Matlab_WSS_Integration_Lib
-          ref: 34a4b8da03e7c52ef567ee7948a08b8a1e7c1800
+          ref: bd938dd4661ff2bc327a2833c02e48a812de1d33
           path: .mac-tools
           persist-credentials: false
       - uses: actions/download-artifact@v4
