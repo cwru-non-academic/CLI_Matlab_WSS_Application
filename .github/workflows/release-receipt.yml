@@ -24,9 +24,9 @@ jobs:
       TARGET_ID: matlab-cli
       PRODUCER_RUN_ID: ${{ inputs.producer_run_id }}
       PLAN_ID: ${{ inputs.plan_id }}
-      WSS_RECEIPT_ENGINE_SHA: 8479d559a7a79f53fb3b8b6654abb53659ee5cbf
-      WSS_RECEIPT_CORE_SHA: 1030e530735933720e1b83b966a47befa29191d0
-      WSS_RECEIPT_VALIDATOR_SHA: 34a4b8da03e7c52ef567ee7948a08b8a1e7c1800
+      WSS_RECEIPT_ENGINE_SHA: 685e214a5bcedab0eb757606aabaefacb5215b1f
+      WSS_RECEIPT_CORE_SHA: 084b9bc0e2e25489c46faaa70ef6014ead818ef4
+      WSS_RECEIPT_VALIDATOR_SHA: 76bef97decb7d15b9dfabe7d964926715a74611a
     steps:
       - name: Require static caller eligibility before credentials
         shell: pwsh
@@ -36,13 +36,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: cwru-non-academic/Python_WSS_Integration_Lib
-          ref: 8479d559a7a79f53fb3b8b6654abb53659ee5cbf
+          ref: 685e214a5bcedab0eb757606aabaefacb5215b1f
           path: bootstrap/Python_WSS_Integration_Lib
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
           repository: cwru-non-academic/WSSCore
-          ref: 1030e530735933720e1b83b966a47befa29191d0
+          ref: 084b9bc0e2e25489c46faaa70ef6014ead818ef4
           path: core
           persist-credentials: false
       - uses: actions/checkout@v4
@@ -55,7 +55,7 @@ jobs:
         if: ${{ true }}
         with:
           repository: cwru-non-academic/Matlab_WSS_Integration_Lib
-          ref: 34a4b8da03e7c52ef567ee7948a08b8a1e7c1800
+          ref: 76bef97decb7d15b9dfabe7d964926715a74611a
           path: validator
           persist-credentials: false
       - uses: actions/checkout@v4
