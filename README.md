@@ -5,6 +5,72 @@ repository, consumed as a pinned submodule at `external/wss-matlab-wrapper`.
 This mirrors the Python application/wrapper split and leaves the wrapper usable
 by other CLIs and GUIs.
 
+## First stimulation
+
+The Windows example uses MATLAB R2026b with .NET 8 CoreCLR. Install Git and the .NET 8 SDK to build the managed host. Use MATLAB and .NET of the same host architecture. See [Checks](#checks) for the other platform and release combinations exercised by CI.
+
+From PowerShell:
+
+```powershell
+git clone --recurse-submodules https://github.com/cwru-non-academic/CLI_Matlab_WSS_Application.git
+cd CLI_Matlab_WSS_Application
+dotnet build external/wss-matlab-wrapper/managed/Wss.Matlab.Managed.csproj -c Release
+```
+
+If you already cloned without the wrapper, run `git submodule update --init --recursive` from the repo root and build again.
+
+### Set the runtime and prepare the profile
+
+In a fresh MATLAB process, set **Current Folder** to `CLI_Matlab_WSS_Application`. In the **Command Window**, select the CLR before your first .NET call, then run the simulated check:
+
+```matlab
+dotnetenv("core", Version="8");
+addpath(fullfile(pwd, "src"));
+wss_cli.main({'--conformance'});
+```
+
+The result reports passed cases and control returns to MATLAB. Restart MATLAB before changing the CLR or swapping the loaded WSS DLLs.
+
+Follow the [hardware overview](https://cwru-non-academic.github.io/WSS_Documentation/hardwareDocs/wsshardware.html) for the physical setup and the [bench verification handoff](https://github.com/cwru-non-academic/WSS_Documentation/blob/main/apiDocs/conceptual/start-here-using-an-application.md#bench-verification) for the approved profile and measurement procedure. Use a bench setup with no person connected.
+
+Copy the three `Config/*.json` files to a writable directory named `Config-bench` in the repo root and apply the bench profile to that copy. In `stimConfig.json`, check that `maxWSS` is 1 and that `firmware` and the first `wssTargets` entry match the device. The example uses H03 and `0x81`. It has example calibration on `ch1` and zeroed calibration on `ch2`/`ch3`. Use the approved `stimParams.json` for `ch1` and retain the associated `modelConfig.json`.
+
+To make the working copy from the MATLAB Command Window:
+
+```matlab
+configDir = fullfile(pwd, 'Config-bench');
+if ~isfolder(configDir), mkdir(configDir); end
+copyfile(fullfile(pwd, 'Config', '*.json'), configDir);
+```
+
+Apply the approved settings in `Config-bench` before running a live command.
+
+### Connect from the MATLAB Command Window
+
+For serial, locate the device in **Device Manager → Ports (COM & LPT)**. For BLE, enable Bluetooth and use the exact advertised name of the NUS device. Run one of the following launch commands:
+
+```matlab
+configDir = fullfile(pwd, 'Config-bench');
+port = input('WSS serial port: ', 's');
+wss_cli.main({'--transport', 'serial', '--serial', port, '--config', configDir});
+```
+
+```matlab
+configDir = fullfile(pwd, 'Config-bench');
+name = input('WSS BLE name: ', 's');
+wss_cli.main({'--transport', 'ble', '--ble-device-name', name, '--config', configDir});
+```
+
+### Send a command, verify output, and stop
+
+1. At the application's `>` prompt, run `status`. Setup is asynchronous. When `Started` is true, continue to the next step. If `Ready` is true and `Started` is false, run `start` and check `status` again until `Started` is true.
+2. Enter `stim ch1 <magnitude>`, replacing `<magnitude>` with the normalized input from your bench profile. Confirm output on the mapped channel using the bench procedure.
+3. Enter `stop` and verify output has ceased. Enter `quit` to exit.
+
+If the app never starts, check the selected device, port access, firmware and receiver address. If it starts but the bench measurement shows no output, check that the loaded calibration and model apply to the channel you are testing.
+
+MATLAB displays true as `1` in `status`. The startup output shows the resolved `Host log`, which includes setup and tick errors. To rehearse without a device, copy the application JSONs to a disposable directory and call `wss_cli.main({'--test', '--config', practiceDir})` with `practiceDir` set to that directory. Use the same prompt commands.
+
 ## Layout
 
 - `src/+wss_cli/`: parser, production `createController` factory and command routing.
@@ -27,15 +93,7 @@ Inspect the actual pin with `git ls-tree HEAD external/wss-matlab-wrapper`.
 The explicit `--wrapper-root` override remains available for deliberate local
 development against a separate wrapper checkout. It never changes the gitlink.
 
-## Setup and run
-
-Clone the application and its pinned wrapper:
-
-```powershell
-git clone --recursive https://github.com/cwru-non-academic/CLI_Matlab_WSS_Application.git
-cd CLI_Matlab_WSS_Application
-dotnet build external/wss-matlab-wrapper/managed/Wss.Matlab.Managed.csproj -c Release
-```
+## Additional launch options and commands
 
 For optional local development against a sibling wrapper:
 
@@ -87,8 +145,15 @@ includes `backends/macos/WSS.Transport.BLE.MacOS.dll` and
 backend, a supported native runtime and OS Bluetooth access. The native
 compatibility and ABI checks below do not establish physical BLE operation.
 
-Commands: `help`, `start`, `stop`, `status`, `stim`, `analog`, `reload-core`,
-`reload-params`, `save-params`, `quit`/`exit`. Quoted reload paths may contain spaces.
+| Command | Use |
+| --- | --- |
+| `status` | Show Ready, Started, model support, ticks and the latest error. |
+| `start`, `stop` | Request a broadcast start or stop. |
+| `stim <channel> <magnitude>` | Send a finite normalized input from 0 to 1 through the active model and channel calibration. For one device use `ch1`, `ch2`, or `ch3`. The aliases `thumb`, `index`, and `middle` select the same channels. |
+| `analog <channel> <pw> [amp] [ipi]` | Send a direct request. Pulse width is in µs, amplitude is in the mA domain, and interval is in ms. Omitted amplitude and interval default to 3 and 10. Use the direct values supplied by your bench procedure. |
+| `reload-core`, `reload-params [path]`, `save-params` | Reload or persist the host profile. See [Coordinated configuration reload](#coordinated-configuration-reload) for paths. |
+| `help`, `quit`, `exit` | Show help or close the CLI and return to MATLAB. |
+
 `--conformance` (or `--transport=conformance`) without `--command` runs the
 shared deterministic catalog and exits, like the C# conformance entry. Supplying
 commands uses the emulator for those commands.
@@ -119,10 +184,10 @@ reload contract below for this checkout's pinned wrapper.
 
 ```matlab
 addpath('src');
-setenv('WSS_MATLAB_WRAPPER_ROOT', fullfile(pwd, '..', 'Matlab_WSS_Integration_Lib'));
+setenv('WSS_MATLAB_WRAPPER_ROOT', fullfile(pwd, 'external', 'wss-matlab-wrapper'));
 assertSuccess(runtests('tests'));
 addpath('conformance');
-results = runCliConformance(fullfile(pwd, '..', 'Matlab_WSS_Integration_Lib'));
+results = runCliConformance(fullfile(pwd, 'external', 'wss-matlab-wrapper'));
 ```
 
 [Normal CLI CI](.github/workflows/cli-ci.yml) runs the production
